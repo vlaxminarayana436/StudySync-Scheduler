@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ Import Poppins font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+/* ✅ Global font setup and background */
+body {
+  font-family: 'Poppins', sans-serif;
+  @apply antialiased;
+  background: linear-gradient(to bottom right, #2e1065, #6b21a8, #7c3aed);
+  color: #f3f4f6;
+}
+
+/* ✅ Color Theme Variables */
+:root {
+  --primary: #7c3aed;       /* Violet-600 */
+  --secondary: #ec4899;     /* Pink-500 */
+  --accent: #60a5fa;        /* Blue-400 */
+  --light-bg: #fdf4ff;      /* Light pink */
+  --soft-border: #e0e7ff;   /* Indigo-100 */
+  --text-muted: #c4b5fd;    /* Soft purple */
+  --highlight: #f9a8d4;     /* Light rose */
+  --danger: #ef4444;        /* Red-500 */
+}
+
+/* ✅ Buttons */
+.btn {
+  @apply inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-300;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #6d28d9; /* Violet-700 */
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+}
+.btn-secondary:hover {
+  background-color: #db2777; /* Pink-600 */
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+}
+.btn-danger:hover {
+  background-color: #dc2626; /* Red-600 */
+}
+
+/* ✅ Cards */
+.card {
+  @apply bg-white/10 text-white rounded-2xl shadow-xl p-6 border border-white/20 backdrop-blur-md hover:shadow-2xl transition-all;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ✅ Custom scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thumb-pink-400::-webkit-scrollbar-thumb {
+  background-color: #f472b6;
+}
+.scrollbar-track-pink-100::-webkit-scrollbar-track {
+  background-color: #fce7f3;
+}
