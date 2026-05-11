@@ -2,7 +2,7 @@
 
 StudySync is a full-stack web application designed to eliminate the friction of organizing group study sessions. By automating the process of matching availability among students, it ensures productive collaboration without the back-and-forth of manual scheduling.
 
-## 🏗️ Architecture & Directory Structure
+## -> Architecture & Directory Structure
 The project follows a modular React architecture with a decoupled Firebase backend for real-time data persistence.
 
 * **src/components/**: Reusable UI components including AuthForms, Dashboard, and SessionList.
@@ -10,13 +10,13 @@ The project follows a modular React architecture with a decoupled Firebase backe
 * **src/utils/**: Core algorithmic logic for multi-user availability matching.
 * **src/types.tsx**: TypeScript interfaces ensuring robust data safety across the application.
 
-## 🚀 Key Features
+## -> Key Features
 * **Automated Availability Matching**: Intelligently identifies common free time slots among group members to find the optimal study time.
 * **Real-time Collaboration**: Powered by **Firebase Firestore** for instant updates to sessions and group metadata.
 * **Integrated Video Conferencing**: Seamlessly launch virtual study rooms via the **Jitsi Meet API** directly within the dashboard.
 * **Secure Authentication**: Role-based access control (Host/Member) managed through **Firebase Authentication**.
 
-## 📊 Technical Specifications
+## -> Technical Specifications
 | Attribute | Implementation |
 | :--- | :--- |
 | **Frontend Framework** | React.js (v18+) with TypeScript |
