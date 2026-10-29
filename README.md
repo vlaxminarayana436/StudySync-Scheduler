@@ -1,5 +1,7 @@
 # StudySync Scheduler
 
+**Live application:** [study-scheduler-3c270.web.app](https://study-scheduler-3c270.web.app/)
+
 StudySync Scheduler is a web application for coordinating study sessions. Users can create or join a study group, share availability, review suggested meeting times, and schedule sessions. Hosts can launch a Jitsi Meet room from a scheduled session. A browser-only demo is also available.
 
 ## Features
