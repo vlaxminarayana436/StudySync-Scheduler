@@ -1,25 +1,41 @@
-import React from 'react';
+import { format } from 'date-fns';
+import { HiOutlineCalendarDays, HiOutlineClock } from 'react-icons/hi2';
+import type { StudySession } from '../types';
 
-const SessionList = ({ sessions }: { sessions: any[] }) => {
+interface SessionListProps {
+  sessions: StudySession[];
+}
+
+const SessionList: React.FC<SessionListProps> = ({ sessions }) => {
+  if (sessions.length === 0) {
+    return <p className="session-list-empty">No study sessions scheduled yet.</p>;
+  }
+
   return (
-    <div className="space-y-4">
-      {sessions.map((session, index) => (
-        <div key={index} className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold">{session.sessionName}</h3>
-          <p>{session.startTime} - {session.endTime}</p>
-          <p>Hosted by: {session.createdBy}</p>
-          {!session.isLaunched ? (
-            <button disabled className="bg-gray-500 text-white p-2 rounded-full w-full mt-2">
-              Waiting for Host to Launch
-            </button>
-          ) : (
-            <button className="bg-blue-500 text-white p-2 rounded-full w-full mt-2">
-              Join Session
-            </button>
-          )}
-        </div>
-      ))}
-    </div>
+    <ul className="simple-session-list">
+      {sessions.map((session) => {
+        const start = new Date(session.start);
+        const end = new Date(session.end);
+        const validStart = Number.isNaN(start.getTime()) ? null : start;
+        const validEnd = Number.isNaN(end.getTime()) ? null : end;
+
+        return (
+          <li key={session.id}>
+            <span className="simple-session-mark" aria-hidden="true" />
+            <div>
+              <strong>{session.sessionName}</strong>
+              <span className="simple-session-meta">
+                {session.subject || 'Study session'} · Hosted by {session.createdBy || 'a study buddy'}
+              </span>
+            </div>
+            <span className="simple-session-time">
+              {validStart ? <><HiOutlineCalendarDays aria-hidden="true" /> {format(validStart, 'MMM d')}</> : null}
+              {validStart ? <><HiOutlineClock aria-hidden="true" /> {format(validStart, 'h:mm a')}{validEnd ? ` – ${format(validEnd, 'h:mm a')}` : ''}</> : 'Time to be confirmed'}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 };
 

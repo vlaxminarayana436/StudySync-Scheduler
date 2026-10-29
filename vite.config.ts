@@ -1,8 +1,15 @@
-// vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // <-- This ensures all paths are relative for standalone use
+  base: './',
+  server: {
+    host: '0.0.0.0',
+    allowedHosts: ['.e2b.app'],
+  },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['.e2b.app'],
+  },
 });

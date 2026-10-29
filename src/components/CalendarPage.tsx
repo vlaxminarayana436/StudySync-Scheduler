@@ -1,21 +1,14 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
+import type { StudySyncUser, UserRole } from '../types';
 
 interface CalendarPageProps {
-  role: 'host' | 'member' | null;
+  user: StudySyncUser;
+  role: UserRole;
+  onLogout: () => void | Promise<void>;
 }
 
-const CalendarPage: React.FC<CalendarPageProps> = ({ role }) => {
-  const navigate = useNavigate();
-
-  // If role is missing or invalid, redirect to login
-  if (!role) {
-    navigate('/');
-    return null; // Prevent rendering while navigating
-  }
-
-  return <Dashboard role={role} />;
-};
+const CalendarPage: React.FC<CalendarPageProps> = ({ user, role, onLogout }) => (
+  <Dashboard user={user} role={role} onLogout={onLogout} />
+);
 
 export default CalendarPage;

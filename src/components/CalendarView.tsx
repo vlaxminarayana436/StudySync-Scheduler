@@ -1,100 +1,112 @@
-import React from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { HiOutlineArrowTopRightOnSquare, HiOutlineCalendarDays, HiOutlineClock, HiOutlinePlayCircle, HiOutlineTrash, HiOutlineUserGroup, HiOutlineVideoCamera } from 'react-icons/hi2';
+import type { StudySession, UserRole } from '../types';
 
-interface Session {
-  id: string;
-  sessionName: string;
-  start: string;
-  end: string;
-  createdBy: string;
-  jitsiLink?: string;
+interface CalendarViewProps {
+  sessions: StudySession[];
+  role: UserRole;
+  currentUserId: string;
+  onLaunch: (session: StudySession) => Promise<void>;
+  onDelete: (session: StudySession) => Promise<void>;
+  emptyTitle?: string;
+  emptyCopy?: string;
 }
 
-interface Props {
-  role: 'host' | 'member';
-  sessions: Session[];
+function displayDate(value: string, pattern: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Time to be confirmed' : format(date, pattern);
 }
 
-const CalendarView: React.FC<Props> = ({ role, sessions }) => {
-  const handleLaunchSession = async (sessionId: string) => {
-    const jitsiLink = `https://meet.jit.si/study-${sessionId}`;
-    const sessionRef = doc(db, 'sessions', sessionId);
-    await updateDoc(sessionRef, { jitsiLink });
+function subjectClass(subject: string): string {
+  const normalized = subject.toLowerCase();
+  if (normalized.includes('math')) return 'subject-math';
+  if (normalized.includes('chem')) return 'subject-chemistry';
+  if (normalized.includes('computer') || normalized.includes('science')) return 'subject-computing';
+  if (normalized.includes('biology')) return 'subject-biology';
+  return 'subject-general';
+}
+
+const CalendarView: React.FC<CalendarViewProps> = ({
+  sessions,
+  role,
+  currentUserId,
+  onLaunch,
+  onDelete,
+  emptyTitle = 'Nothing on the calendar yet',
+  emptyCopy = 'When a session is scheduled, you’ll find all the details here.',
+}) => {
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const runAction = async (session: StudySession, action: (session: StudySession) => Promise<void>) => {
+    setBusyId(session.id);
+    try {
+      await action(session);
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    const confirm = window.confirm('Are you sure you want to delete this session?');
-    if (!confirm) return;
-    await deleteDoc(doc(db, 'sessions', sessionId));
-  };
+  if (sessions.length === 0) {
+    return (
+      <div className="empty-sessions">
+        <span className="empty-calendar-icon"><HiOutlineCalendarDays aria-hidden="true" /></span>
+        <strong>{emptyTitle}</strong>
+        <p>{emptyCopy}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-4xl font-bold text-white mb-4 font-poppins animate-fadeIn">
-        Upcoming Sessions
-      </h2>
+    <div className="session-list">
+      {sessions.map((session) => {
+        const canManage = role === 'host' && (!session.createdById || session.createdById === currentUserId || currentUserId.startsWith('demo-'));
+        const roomReady = Boolean(session.jitsiLink);
+        const subjectTone = subjectClass(session.subject || 'Other');
 
-      {sessions.length === 0 ? (
-        <p className="text-white/70 italic">No sessions scheduled.</p>
-      ) : (
-        sessions.map((session) => (
-          <div
-            key={session.id}
-            className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/30 shadow-lg p-6 flex justify-between items-center transition-all hover:shadow-2xl hover:scale-[1.01]"
-          >
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-1">{session.sessionName}</h3>
-              <p className="text-sm text-pink-200">
-                {format(new Date(session.start), 'PPpp')} → {format(new Date(session.end), 'PPpp')}
-              </p>
-              <p className="text-xs text-white/60 mt-1">Hosted by: {session.createdBy}</p>
+        return (
+          <article className={`session-card ${subjectTone}`} key={session.id}>
+            <div className="session-date-block" aria-label={displayDate(session.start, 'EEEE, MMMM d')}>
+              <span>{displayDate(session.start, 'MMM')}</span>
+              <strong>{displayDate(session.start, 'dd')}</strong>
+              <small>{displayDate(session.start, 'EEE')}</small>
             </div>
 
-            <div className="flex gap-2 items-center">
-              {role === 'host' ? (
-                <>
-                  {session.jitsiLink ? (
-                    <a
-                      href={session.jitsiLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition"
-                    >
-                      Join
-                    </a>
-                  ) : (
-                    <button
-                      onClick={() => handleLaunchSession(session.id)}
-                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow transition"
-                    >
-                      Launch
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDeleteSession(session.id)}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : session.jitsiLink ? (
-                <a
-                  href={session.jitsiLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition"
-                >
-                  Join
+            <div className="session-card-content">
+              <div className="session-card-title-row">
+                <span className={`subject-chip ${subjectTone}`}>{session.subject || 'Study session'}</span>
+                {roomReady && <span className="room-live-chip"><i /> ROOM OPEN</span>}
+              </div>
+              <h3>{session.sessionName || 'Study session'}</h3>
+              {session.description && <p className="session-description">{session.description}</p>}
+              <div className="session-meta">
+                <span><HiOutlineClock aria-hidden="true" /> {displayDate(session.start, 'h:mm a')} – {displayDate(session.end, 'h:mm a')}</span>
+                <span><HiOutlineUserGroup aria-hidden="true" /> {session.groupName ? `Group: ${session.groupName}` : `Hosted by ${session.createdBy || 'a study buddy'}`}</span>
+              </div>
+            </div>
+
+            <div className="session-card-actions">
+              {roomReady ? (
+                <a className="button button--join" href={session.jitsiLink} target="_blank" rel="noopener noreferrer">
+                  <HiOutlineArrowTopRightOnSquare aria-hidden="true" /> Join room
                 </a>
+              ) : canManage ? (
+                <button className="button button--launch" type="button" onClick={() => void runAction(session, onLaunch)} disabled={busyId === session.id}>
+                  {busyId === session.id ? <span className="button-spinner button-spinner--light" /> : <HiOutlineVideoCamera aria-hidden="true" />}
+                  {busyId === session.id ? 'Opening…' : 'Launch room'}
+                </button>
               ) : (
-                <span className="text-yellow-300 font-medium italic">⏳ Wait for Host</span>
+                <span className="room-waiting"><HiOutlinePlayCircle aria-hidden="true" /> Waiting for host</span>
+              )}
+              {canManage && (
+                <button className="session-delete" type="button" aria-label={`Delete ${session.sessionName}`} title="Delete session" onClick={() => void runAction(session, onDelete)} disabled={busyId === session.id}>
+                  <HiOutlineTrash aria-hidden="true" />
+                </button>
               )}
             </div>
-          </div>
-        ))
-      )}
+          </article>
+        );
+      })}
     </div>
   );
 };
