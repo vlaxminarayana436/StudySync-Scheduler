@@ -1,50 +1,55 @@
 # StudySync Scheduler
 
-**Make time for better study.** StudySync Scheduler helps study groups turn shared availability into a bookable session, with a scheduling flow designed to keep attendance high and reduce repeat exclusions.
+StudySync Scheduler is a web application for coordinating study sessions. Users can create or join a study group, share availability, review suggested meeting times, and schedule sessions. Hosts can launch a Jitsi Meet room from a scheduled session. A browser-only demo is also available.
 
-## Overview
+## Features
 
-StudySync is a responsive web application for organizing collaborative study sessions. Students create or join a group, share availability, review ranked meeting suggestions, and—if they are the host—schedule a session and launch a Jitsi Meet room.
+- Google sign-in through Firebase Authentication.
+- Study groups with invite codes and member-specific availability.
+- Availability matching in 30-minute increments for 60-, 90-, or 120-minute sessions.
+- Up to three suggestions on separate local calendar dates; a suggestion must fit a strict majority of group members.
+- Attendance-first ranking, followed by recent fairness history, availability scarcity, and earliest start time.
+- Fairness memory based on the eight most recent scheduled matches. A member with shared availability who is not accommodated accrues one miss point; including that member in a later match reduces the score by one, to a minimum of zero.
+- Host scheduling, calendar management, and Jitsi Meet room launch.
+- Demo groups, sessions, availability, and fairness history stored in the current browser.
 
-The matcher prioritizes attendance first. When multiple windows fit the same number of people, StudySync uses recent match history as a fairness tie-breaker, then considers how many alternatives attendees have.
+## Matching behavior
 
-## Product highlights
+Group members select study windows for the next seven days. The application converts these windows to UTC ISO timestamps so that members in different time zones can compare the same real-world times. Match candidates are checked in 30-minute increments against the selected session duration.
 
-- **Study groups and invite codes** — create a group for a course, exam-preparation team, or project and invite members with a code.
-- **Shared availability** — select local study windows for the next seven days. Firestore stores exact UTC timestamps so members in different time zones compare the same real-world times.
-- **Ranked time suggestions** — search in 30-minute increments for 60-, 90-, or 120-minute sessions. Suggestions require a strict majority and are ranked by attendance, fairness memory, availability scarcity, and then earliest start.
-- **Fairness memory** — for the last eight scheduled matches, a member who shared availability but was not accommodated gains miss debt; including them in a later match reduces it. Attendance remains the primary goal, and fairness only breaks attendance ties.
-- **Host scheduling** — convert a suggestion into a calendar session. The matched start and end are locked so the saved fairness record reflects the chosen match. The session and its history are written together in Firestore.
-- **Jitsi Meet rooms** — launch a dedicated video room from a scheduled session.
-- **Role-based experience** — hosts can schedule and manage their sessions; members can review the schedule and ask a host to book a match.
-- **Demo mode** — explore the workflow with sample teammates without signing in. Demo groups, availability, sessions, and fairness history stay in the current browser.
-- **Responsive workspace** — access overview, calendar, sessions, and time matching on desktop or mobile.
+Candidates are ranked in this order:
+
+1. Number of members who can attend.
+2. Accumulated fairness miss points among those attendees.
+3. Availability scarcity among those attendees.
+4. Earlier start time.
+
+Fairness history is written only after a matched session is successfully created. Firestore stores the session and its history record in the same batch. In demo mode, the corresponding data is stored in browser local storage.
 
 ## Technology
 
-- React 18, TypeScript, and Vite
+- React 18 and TypeScript
+- Vite
 - Firebase Authentication and Cloud Firestore
-- Jitsi Meet for study rooms
+- Jitsi Meet
 - date-fns, React Icons, and React Hot Toast
-- Custom responsive CSS with Tailwind CSS utilities
+- Custom CSS and Tailwind CSS utilities
 
-## Run locally
+## Requirements
 
-### Requirements
-
-- Node.js 22.12 or later (or Node.js 20.19 or later)
+- Node.js 22.12 or later, or Node.js 20.19 or later
 - npm
 
-### Install and start
+## Local development
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Vite prints the local development URL when the server is ready.
+Vite prints the local development URL when the server starts.
 
-### Quality checks
+## Validation
 
 ```bash
 npm run typecheck
@@ -58,52 +63,50 @@ To serve the production build locally:
 npm run preview
 ```
 
-## Firebase configuration
+## Firebase setup
 
-The Firebase web-app configuration is defined in `src/utils/firebase.ts`; the Firestore instance is exported from `src/utils/firestore.ts`. For a deployment under your own Firebase project:
+The Firebase web-app configuration is in `src/utils/firebase.ts`; the Firestore instance is initialized in `src/utils/firestore.ts`. For a separate Firebase project:
 
 1. Create a Firebase project and register a web app.
-2. Enable **Google** in Firebase Authentication and enable Cloud Firestore.
-3. Add your development and production hostnames to Firebase Authentication's authorized domains.
-4. Replace the web-app values in `src/utils/firebase.ts` and update `.firebaserc` to select your project.
-5. Review the rules in `firestore.rules` and deploy them before using group features:
+2. Enable Google as an Authentication provider and create a Cloud Firestore database.
+3. Add the development and production hostnames to Firebase Authentication's authorized domains.
+4. Replace the web-app configuration in `src/utils/firebase.ts` and update `.firebaserc` to use the intended project.
+5. Review and deploy `firestore.rules`:
 
    ```bash
    firebase deploy --only firestore:rules
    ```
 
-Firebase Hosting is configured to serve `dist/`. Build and deploy with the Firebase CLI:
+Firebase Hosting serves the `dist/` directory. Build before deploying:
 
 ```bash
 npm run build
 firebase deploy --only hosting
 ```
 
-For Hosting and rules together:
+To deploy Hosting and Firestore rules together:
 
 ```bash
 npm run build
 firebase deploy --only hosting,firestore:rules
 ```
 
-The Firestore rules restrict group lists, availability, and match history to group members; allow each member to edit only their own availability; and limit session changes to the session creator. Match-history records are immutable and must be created together with a new group-linked session. The host/member distinction in the client is a product role, not a trusted security boundary; a production service that requires server-enforced host privileges should add trusted role management, such as Firebase custom claims.
+## Firestore and authorization notes
+
+The rules restrict group lists, availability, and match history to group members. Members can update only their own availability. Match-history records are immutable and can be created only alongside a new group-linked session. Session updates and deletions are limited to the session creator.
+
+The host/member distinction controls the client interface; it is not a trusted server-side authorization boundary. The rules do not independently enforce host-only session creation. A deployment that requires that restriction should add a trusted role mechanism, such as Firebase custom claims, and enforce it in the rules.
 
 ## Project structure
 
 ```text
 src/
-  components/       Authentication, dashboard, calendar, sessions, and time matching UI
-  utils/demo.ts     Browser-only demo data and storage helpers
-  utils/firebase.ts Firebase app and Authentication setup
-  utils/firestore.ts Firestore instance
-  utils/timeMatching.ts Availability windows, match ranking, and fairness debt
-  types.tsx         Shared application and match-history types
-firestore.rules     Firestore access rules
-firebase.json       Hosting and rules configuration
+  components/         Authentication, dashboard, calendar, sessions, and time matching
+  utils/demo.ts       Demo data and browser-storage helpers
+  utils/firebase.ts   Firebase app and Authentication setup
+  utils/firestore.ts  Firestore initialization
+  utils/timeMatching.ts Availability windows, candidate generation, and ranking
+  types.tsx           Shared application types
+firestore.rules       Firestore access rules
+firebase.json         Firebase Hosting and rules configuration
 ```
-
-## Resume-ready summary
-
-> Built a responsive study-group scheduling application with React and TypeScript. Implemented shared availability matching, attendance-first recommendations with persistent fairness memory, Firebase Authentication and real-time Firestore persistence, host scheduling, and Jitsi Meet room launch.
-
-StudySync focuses on the end-to-end study-group workflow; this README does not make claims of market exclusivity for availability matching or fairness ranking.
